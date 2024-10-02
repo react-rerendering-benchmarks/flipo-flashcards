@@ -1,4 +1,6 @@
-import { View, useColorScheme, TextInput, TouchableOpacity, ScrollView} from "react-native";
+import { useRef } from "react";
+import { useCallback } from "react";
+import { View, useColorScheme, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import React, { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -19,25 +21,29 @@ import TextButton from "../../components/pressable/TextButton";
 import * as Localization from 'expo-localization';
 import * as locales from "../../localizations/decks/localizationDeckEditScreen";
 import { I18n } from 'i18n-js';
-
-const DeckEditScreen = ({ route, navigation }) => {
+const DeckEditScreen = ({
+  route,
+  navigation
+}) => {
   const colorScheme = colorSchemes[useColorScheme()];
 
   // localization setup
-  const [locale, setLocale] = useState(Localization.locale);
-  const i18n = new I18n(locales)
+  const locale = useRef(Localization.locale);
+  const i18n = new I18n(locales);
   i18n.enableFallback = true;
-  i18n.translations = {...locales};
+  i18n.translations = {
+    ...locales
+  };
   i18n.defaultLocale = "en";
-  i18n.locale = locale;
+  i18n.locale = locale.current;
 
   // functions for updating the deck states in previous screens
   const updateDecks = route.params.updateDecks;
   const updateDeckProfile = route.params.updateDeckProfile;
-
-  const existing = (route.params.deck != undefined);
-  
-  const [customDecks, setCustomDecks] = useState({decks: []});
+  const existing = route.params.deck != undefined;
+  const [customDecks, setCustomDecks] = useState({
+    decks: []
+  });
 
   // header title setup
   navigation.setOptions({
@@ -46,10 +52,10 @@ const DeckEditScreen = ({ route, navigation }) => {
       fontFamily: "Montserrat-ExtraBold",
       color: colorScheme["ui"],
       letterSpacing: 1.8,
-      fontSize: 20,
-    },
+      fontSize: 20
+    }
   });
-  
+
   // loads custom deck data
   const getDecks = async () => {
     try {
@@ -57,83 +63,71 @@ const DeckEditScreen = ({ route, navigation }) => {
       if (data != null) {
         setCustomDecks(JSON.parse(data));
       } else {
-        setCustomDecks({decks: []});
+        setCustomDecks({
+          decks: []
+        });
       }
     } catch (e) {
       console.error('There was an error with loading the decks.');
     }
-  }
+  };
 
   // stores custom deck data
-  const storeDecks = async (data) => {
+  const storeDecks = async data => {
     try {
       await AsyncStorage.setItem('customDecks', JSON.stringify(data));
     } catch (e) {
-      console.error('There was an error with saving the decks.')
+      console.error('There was an error with saving the decks.');
     }
   };
-
-  const [title, setTitle] = useState( existing
-    ? route.params.deck['title']
-    : i18n.t('screenTitleNew')
-  );
-  const [cards, setCards] = useState( existing
-    ? route.params.deck['cards']
-    : []);
+  const title = useRef(existing ? route.params.deck['title'] : i18n.t('screenTitleNew'));
+  const cards = useRef(existing ? route.params.deck['cards'] : []);
   const [cardElements, setCardElements] = useState([]);
   const [alert, setAlert] = useState('');
 
   // new deck boilerplate
-  let newDeck = ( existing
-    ? {
-        id: route.params.deck['id'],
-        custom: true,
-        title: title,
-        coverUrl: route.params.deck['coverUrl'],
-        cards: cards,
-      }
-    : {
-        id: customDecks['decks'].length,
-        custom: true,
-        title: title,
-        coverUrl: undefined,
-        cards: cards,
-      }
-  );
-
-
+  let newDeck = existing ? {
+    id: route.params.deck['id'],
+    custom: true,
+    title: title.current,
+    coverUrl: route.params.deck['coverUrl'],
+    cards: cards.current
+  } : {
+    id: customDecks['decks'].length,
+    custom: true,
+    title: title.current,
+    coverUrl: undefined,
+    cards: cards.current
+  };
   const [newCard, setNewCard] = useState(false);
 
   // adds or changes a card in the deck
-  const updateCard = (card) => {
+  const updateCard = useCallback(card => {
     let cardsUpdate = newDeck['cards'];
 
     // If a new card is being created
     if (card['id'] >= newDeck['cards'].length) {
       cardsUpdate.push(card);
-    } else { // if an existing card is being edited
+    } else {
+      // if an existing card is being edited
       cardsUpdate[card['id']] = card;
     }
-
-    setCards(cardsUpdate);
-    
+    cards.current = cardsUpdate;
     setNewCard(false);
-  }
+  }, [setNewCard, setCards]);
 
   // removes a card from the deck
-  const removeCard = (index) => {
+  const removeCard = index => {
     let cardsUpdate = newDeck['cards'];
-
     try {
       cardsUpdate.splice(index, 1);
       cardsUpdate = reorderObjectArrayId(cardsUpdate);
-      
-      setCards(cardsUpdate);
+      cards.current = cardsUpdate;
       refreshCardElements();
     } catch (e) {
       console.error('Could not remove card. Most likely, card with specified id was not found.');
     }
-  }
+  };
 
   // creates a boilerplate for the new card in the new deck
   const createCard = () => {
@@ -141,17 +135,17 @@ const DeckEditScreen = ({ route, navigation }) => {
       'id': newDeck['cards'].length,
       'ars': 1,
       'front': {
-          'title': '',
-          'content': '',
-          'image': undefined,
-      }, 
+        'title': '',
+        'content': '',
+        'image': undefined
+      },
       'back': {
-          'title': '',
-          'content': '',
-          'image': undefined,
+        'title': '',
+        'content': '',
+        'image': undefined
       }
     });
-  } 
+  };
 
   // saves the deck to storage
   const createDeck = () => {
@@ -162,17 +156,13 @@ const DeckEditScreen = ({ route, navigation }) => {
     // checks if the conditions for deck creation are met
     if (newDeck['cards'].length < 2) {
       // throws an alert informing the user about deck creation conditions
-      setAlert(
-        <FlipoModal
-         title={i18n.t('cantCreate')}
-         visible={true}
-         onButtonPress={() => {setAlert('')}}
-        >
+      setAlert(<FlipoModal title={i18n.t('cantCreate')} visible={true} onButtonPress={useCallback(() => {
+        setAlert('');
+      }, [setAlert])}>
           <FlipoText weight='medium' className='text-center text-lg text-primary dark:text-primary-dark'>
             {i18n.t('toCreate')}
           </FlipoText>
-        </FlipoModal>
-      );
+        </FlipoModal>);
     } else {
       // edits or creates the deck and returns to the previous menu
       if (existing) {
@@ -180,36 +170,30 @@ const DeckEditScreen = ({ route, navigation }) => {
       } else {
         newCustomDecks['decks'].push(newDeck);
       }
-      
       setCustomDecks(newCustomDecks);
       storeDecks(customDecks);
-
       updateDecks();
       navigation.goBack();
     }
-  }
+  };
 
   // removes the deck from storage and goes back
   const deleteDeck = () => {
     // gets custom decks list to append the new deck to
     getDecks();
-
-    let newCustomDecks = customDecks
+    let newCustomDecks = customDecks;
     //console.log(newCustomDecks);
     newCustomDecks['decks'].splice(route.params.deck['id'], 1);
     newCustomDecks['decks'] = reorderObjectArrayId(newCustomDecks['decks']);
-
     setCustomDecks(newCustomDecks);
     storeDecks(customDecks);
-
     updateDecks();
     navigation.pop(2);
-  }
+  };
 
   // function that refreshes the card elements
   const refreshCardElements = () => {
-    setCardElements(newDeck['cards'].map(card => (
-      <View key={card['id']}>
+    setCardElements(newDeck['cards'].map(card => <View key={card['id']}>
         <View className='flex-row items-center'>
           <TouchableOpacity className='grow' onPress={() => setNewCard(card)}>
             <CardCell card={card}></CardCell>
@@ -219,9 +203,8 @@ const DeckEditScreen = ({ route, navigation }) => {
             <FlipoText weight='bold' className='text-lg text-alert pl-6'>X</FlipoText>
           </TouchableOpacity>
         </View>
-      </View>
-    )));
-  }
+      </View>));
+  };
 
   // Updates the custom decks list on data change
   useEffect(() => {
@@ -229,7 +212,7 @@ const DeckEditScreen = ({ route, navigation }) => {
     refreshCardElements();
 
     // deck conditions check before leaving the screen
-    navigation.addListener('beforeRemove', (e) => {
+    navigation.addListener('beforeRemove', e => {
       if (newDeck['cards'].length >= 2 || !existing) {
         // if deck creation/edit conditons are met, proceed
         updateDeckProfile(newDeck);
@@ -237,57 +220,38 @@ const DeckEditScreen = ({ route, navigation }) => {
       } else {
         // prevent default behavior of leaving the screen
         e.preventDefault();
-        setAlert(
-          <FlipoModal
-            title={i18n.t('cantCreate')}
-            visible={true}
-            onButtonPress={() => {setAlert('')}}
-          >
+        setAlert(<FlipoModal title={i18n.t('cantCreate')} visible={true} onButtonPress={useCallback(() => {
+          setAlert('');
+        }, [setAlert])}>
             <FlipoText weight='medium' className='text-center text-lg text-primary dark:text-primary-dark'>
               {i18n.t('toCreate')}
             </FlipoText>
-          </FlipoModal>
-        );
+          </FlipoModal>);
       }
     });
-  }, [newCard, cards]);
+  }, [newCard, cards.current]);
 
   // resulting component
-  return (
-    <View>
+  return <View>
       <View className='bg-primary dark:bg-primary-dark'>
-        <ScrollView
-         className="flex-rows h-full space-y-10"
-         overScrollMode='never'
-         keyboardShouldPersistTaps='always'
-        >
+        <ScrollView className="flex-rows h-full space-y-10" overScrollMode='never' keyboardShouldPersistTaps='always'>
           {/* Hero */}
           <View className='items-center space-y-10 px-12'>
             {alert}
             {/*Edit card menu modal*/}
             <EditCardModal card={newCard} editCard={updateCard} i18n={i18n}></EditCardModal>
-            <DeckCard title={newDeck.title} className='w-60'/>
+            <DeckCard title={newDeck.title} className='w-60' />
             {/* Editable deck title label */}
             <View className='space-y-2'>
               <FlipoText className='text-lg text-center'>{i18n.t('deckName')}</FlipoText>
-              <TextInput
-                cursorColor={colorScheme['green']}
-                maxLength={30}
-                multiline
-                defaultValue={newDeck.title}
-                className='text-secondary dark:text-secondary-dark 
+              <TextInput cursorColor={colorScheme['green']} maxLength={30} multiline defaultValue={newDeck.title} className='text-secondary dark:text-secondary-dark 
                   border-b border-green-dark dark:border-green-dark
-                  text-2xl text-center pb-1'
-                autoFocus={route.params.deck == undefined}
-                autoComplete='off'
-                autoCorrect={false}
-                spellCheck={false}
-                style={{fontFamily: 'Montserrat-ExtraBold'}}
-                onChangeText={(val) => setTitle(val)}
-              />
+                  text-2xl text-center pb-1' autoFocus={route.params.deck == undefined} autoComplete='off' autoCorrect={false} spellCheck={false} style={{
+              fontFamily: 'Montserrat-ExtraBold'
+            }} onChangeText={val => title.current = val} />
             </View>
             <View className='flex-row mx-8 space-x-4'>
-              {existing && <TextButton onPress={() => deleteDeck()} className='text-alert'>{i18n.t('deleteDeck')}</TextButton>}
+              {existing && <TextButton onPress={useCallback(() => deleteDeck(), [])} className='text-alert'>{i18n.t('deleteDeck')}</TextButton>}
               <TouchableOpacity onPress={() => createDeck()}>
                 <FlipoButton>{existing ? i18n.t('done') : i18n.t('create')}</FlipoButton>
               </TouchableOpacity>
@@ -304,8 +268,6 @@ const DeckEditScreen = ({ route, navigation }) => {
           </View>
         </ScrollView>
       </View>
-    </View>
-  );
+    </View>;
 };
-
 export default DeckEditScreen;

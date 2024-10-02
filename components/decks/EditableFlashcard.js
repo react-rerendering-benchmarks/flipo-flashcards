@@ -1,172 +1,104 @@
-import { View, useColorScheme, Animated, Image, TextInput, Pressable } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
-import FlipoText from '../FlipoText'
+import { memo } from "react";
+import { View, useColorScheme, Animated, Image, TextInput, Pressable } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import FlipoText from '../FlipoText';
 import colorSchemes from '../../assets/colorSchemes';
-
-const EditableFlashcard = ({ card, flipped, setCard, i18n}) => {
+const EditableFlashcard = memo(({
+  card,
+  flipped,
+  setCard,
+  i18n
+}) => {
   const colorScheme = colorSchemes[useColorScheme()];
-
   const updateCard = (side, prop, value) => {
     let newCard = card;
-
     newCard[side][prop] = value;
-
     setCard(newCard);
-  }
+  };
 
   // flashcard component states
   const [elevationLevel, setElevationLevel] = useState(5);
   const animate = useRef(new Animated.Value(5));
   const interpolateFront = animate.current.interpolate({
     inputRange: [0, 180],
-    outputRange: ['0deg', '180deg'],
+    outputRange: ['0deg', '180deg']
   });
   const interpolateBack = animate.current.interpolate({
     inputRange: [0, 180],
-    outputRange: ['180deg', '360deg'],
+    outputRange: ['180deg', '360deg']
   });
-
   const handleFlip = () => {
     Animated.timing(animate.current, {
       duration: 300,
       toValue: flipped ? 0 : 180,
-      useNativeDriver: true,
+      useNativeDriver: true
     }).start(() => {
       setElevationLevel(5);
     });
-  }
-
+  };
   useEffect(() => {
     handleFlip();
-
     return () => {
       setElevationLevel(30);
-    }
+    };
   }, [flipped]);
-  
-  const front = (
-    <Animated.View
-      className='bg-card dark:bg-card-dark w-full h-full rounded-xl'
-      style={{
-        transform: [{rotateY: interpolateBack}],
-        backfaceVisibility: 'hidden',
-        elevation: elevationLevel,
-      }}
-      collapsable={false}
-    >
-      <View 
-        className='grow justify-center p-2 space-y-4 content-between max-h-full overflow-hidden'
-      >
+  const front = <Animated.View className='bg-card dark:bg-card-dark w-full h-full rounded-xl' style={{
+    transform: [{
+      rotateY: interpolateBack
+    }],
+    backfaceVisibility: 'hidden',
+    elevation: elevationLevel
+  }} collapsable={false}>
+      <View className='grow justify-center p-2 space-y-4 content-between max-h-full overflow-hidden'>
         <FlipoText className='text-center m-2'>{i18n.t('card')} {card.id} - {i18n.t('front')}</FlipoText>
-        <TextInput
-          defaultValue={card['front']['title']}
-          placeholder={i18n.t('frontTitle')}
-          className='text-secondary dark:text-secondary-dark 
-            text-2xl text-center pb-1'
-          cursorColor={colorScheme['green']}
-          placeholderTextColor={colorScheme['ui']}
-          autoFocus
-          maxLength={30}
-          autoComplete='off'
-          multiline
-          autoCorrect={false}
-          spellCheck={false}
-          style={{fontFamily: 'Montserrat-SemiBold', textAlignVertical: 'top'}}
-          onChangeText={(val) => updateCard('front', 'title', val)}
-        />
-        <TextInput
-          defaultValue={card['front']['content']}
-          placeholder={i18n.t('frontContent')}
-          className='text-secondary dark:text-secondary-dark
-            text-center pb-1'
-          cursorColor={colorScheme['green']}
-          placeholderTextColor={colorScheme['ui']}
-          multiline
-          maxLength={124}
-          autoComplete='off'
-          autoCorrect={false}
-          spellCheck={false}
-          style={{fontFamily: 'Montserrat-SemiBold', textAlignVertical: 'top'}}
-          onChangeText={(val) => updateCard('front', 'content', val)}
-        />
+        <TextInput defaultValue={card['front']['title']} placeholder={i18n.t('frontTitle')} className='text-secondary dark:text-secondary-dark 
+            text-2xl text-center pb-1' cursorColor={colorScheme['green']} placeholderTextColor={colorScheme['ui']} autoFocus maxLength={30} autoComplete='off' multiline autoCorrect={false} spellCheck={false} style={{
+        fontFamily: 'Montserrat-SemiBold',
+        textAlignVertical: 'top'
+      }} onChangeText={val => updateCard('front', 'title', val)} />
+        <TextInput defaultValue={card['front']['content']} placeholder={i18n.t('frontContent')} className='text-secondary dark:text-secondary-dark
+            text-center pb-1' cursorColor={colorScheme['green']} placeholderTextColor={colorScheme['ui']} multiline maxLength={124} autoComplete='off' autoCorrect={false} spellCheck={false} style={{
+        fontFamily: 'Montserrat-SemiBold',
+        textAlignVertical: 'top'
+      }} onChangeText={val => updateCard('front', 'content', val)} />
       </View>
       {/* image, if card has one */}
-      {card.front.image
-      ? (<Image
-          source={card.front.image}
-          className='w-full h-1/3 rounded-b-lg'
-        />)
-      : (<></>)}
-    </Animated.View>
-  );
-
-  const back = (
-    <Animated.View
-      className='bg-card dark:bg-card-dark w-full h-full rounded-xl absolute'
-      style={{
-        transform: [{rotateY: interpolateFront}],
-        backfaceVisibility: 'hidden',
-        elevation: elevationLevel,
-        zIndex: (flipped ? 1 : -99),
-    }}>
-      <View
-        className='grow justify-center p-2 space-y-4 content-between max-h-full overflow-hidden'
-      >
+      {card.front.image ? <Image source={card.front.image} className='w-full h-1/3 rounded-b-lg' /> : <></>}
+    </Animated.View>;
+  const back = <Animated.View className='bg-card dark:bg-card-dark w-full h-full rounded-xl absolute' style={{
+    transform: [{
+      rotateY: interpolateFront
+    }],
+    backfaceVisibility: 'hidden',
+    elevation: elevationLevel,
+    zIndex: flipped ? 1 : -99
+  }}>
+      <View className='grow justify-center p-2 space-y-4 content-between max-h-full overflow-hidden'>
         <FlipoText className='text-center m-2'>{i18n.t('card')} {card.id} - {i18n.t('back')}</FlipoText>
-        <TextInput
-          defaultValue={card['back']['title']}
-          placeholder={i18n.t('backTitle')}
-          className='text-secondary dark:text-secondary-dark 
-            text-2xl text-center pb-1'
-          cursorColor={colorScheme['green']}
-          placeholderTextColor={colorScheme['ui']}
-          multiline
-          maxLength={30}
-          autoComplete='off'
-          autoCorrect={false}
-          spellCheck={false}
-          style={{fontFamily: 'Montserrat-SemiBold', textAlignVertical: 'top'}}
-          onChangeText={(val) => updateCard('back', 'title', val)}
-        />
-        <TextInput
-          defaultValue={card['back']['content']}
-          placeholder={i18n.t('backContent')}
-          className='text-secondary dark:text-secondary-dark
-            text-center pb-1'
-          cursorColor={colorScheme['green']}
-          placeholderTextColor={colorScheme['ui']}
-          multiline
-          maxLength={124}
-          autoComplete='off'
-          autoCorrect={false}
-          spellCheck={false}
-          style={{fontFamily: 'Montserrat-SemiBold', textAlignVertical: 'top'}}
-          onChangeText={(val) => updateCard('back', 'content', val)}
-        />
+        <TextInput defaultValue={card['back']['title']} placeholder={i18n.t('backTitle')} className='text-secondary dark:text-secondary-dark 
+            text-2xl text-center pb-1' cursorColor={colorScheme['green']} placeholderTextColor={colorScheme['ui']} multiline maxLength={30} autoComplete='off' autoCorrect={false} spellCheck={false} style={{
+        fontFamily: 'Montserrat-SemiBold',
+        textAlignVertical: 'top'
+      }} onChangeText={val => updateCard('back', 'title', val)} />
+        <TextInput defaultValue={card['back']['content']} placeholder={i18n.t('backContent')} className='text-secondary dark:text-secondary-dark
+            text-center pb-1' cursorColor={colorScheme['green']} placeholderTextColor={colorScheme['ui']} multiline maxLength={124} autoComplete='off' autoCorrect={false} spellCheck={false} style={{
+        fontFamily: 'Montserrat-SemiBold',
+        textAlignVertical: 'top'
+      }} onChangeText={val => updateCard('back', 'content', val)} />
       </View>
       {/* image, if card has one */}
-      {card.front.image
-      ? (<Image
-          source={card.front.image}
-          className='w-full h-1/3 rounded-b-lg'
-        />)
-      : (<></>)}
-    </Animated.View>
-  );
-  
-  return (
-      <View>
+      {card.front.image ? <Image source={card.front.image} className='w-full h-1/3 rounded-b-lg' /> : <></>}
+    </Animated.View>;
+  return <View>
         {/* 
           I haven't figured out why,
           but this Pressable has to be here
           so the text inputs are focusable.
-        */}
+         */}
         <Pressable>
           {front}
         </Pressable>
         {back}
-      </View>
-  );
-}
-
+      </View>;
+});
 export default EditableFlashcard;
