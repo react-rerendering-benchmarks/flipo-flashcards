@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Dimensions, ScrollView, TouchableOpacity, useColorScheme, View } from "react-native";
 import React, { useEffect, useState } from "react";
 
@@ -11,19 +12,21 @@ import TextButton from "../../components/pressable/TextButton";
 import colorSchemes from "../../assets/colorSchemes";
 import { getDeckArs } from "../../utils/deckStatUtils";
 import CardCell from "../../components/decks/CardCell";
-
-const DeckProfileScreen = ({ navigation, route }) => {
+const DeckProfileScreen = ({
+  navigation,
+  route
+}) => {
   let colorScheme = colorSchemes[useColorScheme()];
-  
+
   // unpacks deck passed from parameters
   const [deck, setDeck] = useState(route.params.deck);
-  
+
   // function for updating the decks state in the homepage
   const updateDecks = route.params.updateDecks;
 
   // deck stats state
   const [deckStats, setDeckStats] = useState({
-    'ars': getDeckArs(deck).toFixed(2),
+    'ars': getDeckArs(deck).toFixed(2)
   });
 
   // deck card elements
@@ -31,8 +34,7 @@ const DeckProfileScreen = ({ navigation, route }) => {
 
   // function that refreshes the card elements
   const refreshCardElements = () => {
-    setCardElements(deck['cards'].map(card => (
-      <View key={card['id']}>
+    setCardElements(deck['cards'].map(card => <View key={card['id']}>
         <View className='flex-row items-center'>
           <CardCell card={card}></CardCell>
           <View className='grow'></View>
@@ -40,9 +42,8 @@ const DeckProfileScreen = ({ navigation, route }) => {
             {card['ars'].toFixed(2)}
           </FlipoText>
         </View>
-      </View>
-    )));
-  }
+      </View>));
+  };
 
   // header title setup
   navigation.setOptions({
@@ -51,81 +52,53 @@ const DeckProfileScreen = ({ navigation, route }) => {
       fontFamily: "Montserrat-ExtraBold",
       color: colorScheme["ui"],
       letterSpacing: 1.8,
-      fontSize: deck.title.length < 20
-        ? 20
-        : Dimensions.get("window").width / deck.title.length,
-    },
+      fontSize: deck.title.length < 20 ? 20 : Dimensions.get("window").width / deck.title.length
+    }
   });
-
-  const updateDeckProfile = (passedDeck) => {
+  const updateDeckProfile = passedDeck => {
     setDeck(passedDeck);
     setDeckStats({
-      'ars': getDeckArs(deck).toFixed(2),
+      'ars': getDeckArs(deck).toFixed(2)
     });
     refreshCardElements();
-  }
+  };
 
   //refreshCardElements();
   useEffect(() => {
-    console.log('DeckProfileScreen: useEffect called.')
+    console.log('DeckProfileScreen: useEffect called.');
     refreshCardElements();
   }, []);
-
-
-  return (
-    <View className='bg-primary dark:bg-primary-dark'>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        overScrollMode='never'
-      >
+  return <View className='bg-primary dark:bg-primary-dark'>
+      <ScrollView showsVerticalScrollIndicator={false} overScrollMode='never'>
       <View className="flex-rows items-center h-full p-10">
-        <DeckCard
-          labelCover
-          className="w-full rounded-xl"
-          coverUrl={deck.coverUrl}
-          title={deck.title}
-          cardCount={deck.cards.length}
-          style={{ elevation: 5 }}
-        ></DeckCard>
+        <DeckCard labelCover className="w-full rounded-xl" coverUrl={deck.coverUrl} title={deck.title} cardCount={deck.cards.length} style={{
+          elevation: 5
+        }}></DeckCard>
         {/* Buttons */}
         <View className='m-10 space-y-4'>
           {/* Play button */}
-          <TouchableOpacity 
-            onPress={() =>
-              navigation.navigate("DeckPlayScreen", {
-                deck: deck,
-                updateDeckProfile: updateDeckProfile,
-                updateDecks: updateDecks,
-              })
-            }
-            activeOpacity={0.5}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate("DeckPlayScreen", {
+            deck: deck,
+            updateDeckProfile: updateDeckProfile,
+            updateDecks: updateDecks
+          })} activeOpacity={0.5}>
             <FlipoButton>
-              <FlipoText
-                weight="black"
-                className={`text-2xl tracking-wide text-primary`}
-              >
+              <FlipoText weight="black" className={`text-2xl tracking-wide text-primary`}>
                 Play Deck
               </FlipoText>
             </FlipoButton>
           </TouchableOpacity>
           {/* Edit button
               only custom decks can be edited */}
-          {
-            deck.custom &&
-              <TextButton
-                onPress={() => {
-                  navigation.navigate("DeckEditScreen", {
-                    deck: deck,
-                    updateDeckProfile: updateDeckProfile,
-                    updateDecks: updateDecks,
-                  })
-                }}
-                className='text-center text-strong dark:text-strong-dark'
-              >
+          {deck.custom && <TextButton onPress={useCallback(() => {
+            navigation.navigate("DeckEditScreen", {
+              deck: deck,
+              updateDeckProfile: updateDeckProfile,
+              updateDecks: updateDecks
+            });
+          }, [deck])} className='text-center text-strong dark:text-strong-dark'>
                 Edit deck
-              </TextButton>
-          }
+              </TextButton>}
         </View>
         {/* Deck Stats */}
         <View className='w-full space-y-8'>
@@ -139,18 +112,12 @@ const DeckProfileScreen = ({ navigation, route }) => {
                   <FlipoText weight='bold' className={`text-xl grow`}>ARS:</FlipoText>
                 </View>
                 <View className='grow'>
-                  <FlipoText
-                    weight='semi-bold'
-                    className='tracking-wider text-center py-2
-                    text-ui dark:text-ui-dark'
-                  >
+                  <FlipoText weight='semi-bold' className='tracking-wider text-center py-2
+                    text-ui dark:text-ui-dark'>
                     Deck Average Recall Score
                   </FlipoText>
-                  <FlipoText
-                    weight='bold'
-                    className='text-xl text-center scale-[2]
-                    text-strong dark:text-strong-dark'
-                  >
+                  <FlipoText weight='bold' className='text-xl text-center scale-[2]
+                    text-strong dark:text-strong-dark'>
                     {deckStats.ars}
                   </FlipoText>
                 </View>
@@ -161,17 +128,11 @@ const DeckProfileScreen = ({ navigation, route }) => {
           <View className='space-y-4'>
             <FlipoText weight='bold' className='text-3xl text-left'>Cards</FlipoText>
             <View className='pl-6 flex-row w-full'>
-              <FlipoText 
-                weight='bold'
-                className='text-left text-strong dark:text-strong-dark'
-              >
+              <FlipoText weight='bold' className='text-left text-strong dark:text-strong-dark'>
                 ID
               </FlipoText>
               <View className='grow'></View>
-              <FlipoText
-                weight='bold'
-                className='text-right text-strong dark:text-strong-dark'
-              >
+              <FlipoText weight='bold' className='text-right text-strong dark:text-strong-dark'>
                 ARS
               </FlipoText>
             </View>
@@ -180,8 +141,6 @@ const DeckProfileScreen = ({ navigation, route }) => {
         </View>
       </View>
       </ScrollView>
-    </View>
-  );
+    </View>;
 };
-
 export default DeckProfileScreen;
